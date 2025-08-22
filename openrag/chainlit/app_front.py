@@ -5,8 +5,10 @@ from urllib.parse import urlparse
 
 import chainlit as cl
 import httpx
+import tempfile
 from chainlit.context import get_context
 from openai import AsyncOpenAI
+from PyPDF2 import PdfReader, PdfWriter
 from utils.logger import get_logger
 from dotenv import load_dotenv
 
@@ -129,7 +131,7 @@ async def __format_sources(metadata_sources, only_txt=False):
     for i, s in enumerate(metadata_sources):
         filename = Path(s["filename"])
         file_url = s["file_url"]
-        page = s["page"]
+        page = s["start_page"]
         source_name = f"{filename}" + (
             f" (page: {page})"
             if filename.suffix in [".pdf", ".pptx", ".docx", ".doc"]
@@ -142,10 +144,22 @@ async def __format_sources(metadata_sources, only_txt=False):
         else:
             match filename.suffix.lower():
                 case ".pdf":
+                    reader = PdfReader(file_url)
+                    writer = PdfWriter()
+
+                    start_page = int(s["start_page"])
+                    end_page = int(s["end_page"])
+
+                    for num_page in range(start_page - 1, end_page):
+                        writer.add_page(reader.pages[num_page])
+                    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_file:
+                        temp_path = tmp_file.name
+                        writer.write(tmp_file)
+
                     elem = cl.Pdf(
-                        name=source_name,
-                        url=file_url,
-                        page=int(s["page"]),
+                        name=f"{filename} (pages: {start_page}-{end_page})",
+                        url=temp_path,
+                        page=1,
                         display="side",
                     )
                 case suffix if suffix in [".png", ".jpg", ".jpeg"]:

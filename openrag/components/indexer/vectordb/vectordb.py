@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 import random
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
@@ -233,6 +234,16 @@ class MilvusDB(BaseVectorDB):
         )
 
         schema.add_field(
+            field_name="start_page", 
+            datatype=DataType.INT64
+        )
+
+        schema.add_field(
+            field_name="end_page", 
+            datatype=DataType.INT64
+        )
+
+        schema.add_field(
             field_name="vector",
             datatype=DataType.FLOAT_VECTOR,
             dim=self.embedding_dimension,
@@ -322,12 +333,33 @@ class MilvusDB(BaseVectorDB):
             self.logger.exception("Error embedding documents", error=str(e))
             raise e
 
+    async def __embed_images(self, images: list[Path], document_metatdata: dict, chunk_content_dict: dict) -> list[dict]:
+        try:
+            image_embeddings = self.embedding_model.encode(
+                sentences=images,
+                tasks="retrieval",
+            )
+
+            output = []
+            for i, image in enumerate(images):
+                output.append(
+                    {
+                        "text": chunk_content_dict[str(image.name)],
+                        "vector": image_embeddings[i],
+                        **document_metatdata,
+                    }
+                )
+            return output
+        except Exception as e:
+            self.logger.exception("Error embedding images", error=str(e))
+            raise e
+        
     async def async_add_documents(self, chunks: list[Document]) -> None:
         """Asynchronously add documents to the vector store."""
 
         try:
             file_metadata = dict(chunks[0].metadata)
-            file_metadata.pop("page")
+            file_metadata.pop("start_page")
             file_id, partition = (
                 file_metadata.get("file_id"),
                 file_metadata.get("partition"),
@@ -354,6 +386,29 @@ class MilvusDB(BaseVectorDB):
                 collection_name=self.collection_name,
                 data=entities,
             )
+
+            # # Pass the content of the chunk that has the images in the text section
+            # image_chunk_dict = {}
+            # for chunk in chunks:
+            #     chunk_content = chunk.page_content
+            #     jpeg_images = re.findall(r'!\[\]\(([^)]+\.jpeg)\)', chunk_content, flags=re.IGNORECASE)
+            #     for image_file_name in jpeg_images:
+            #         image_chunk_dict[image_file_name] = chunk_content
+
+            # document_metadata = chunks[0].metadata
+
+            # # entities updates for image embeddings
+            # file_name, file_ext = file_metadata.get("filename").split(".")
+            # image_folder = Path(self.config['paths']['data_dir']) / file_ext/ file_name
+            # if image_folder.exists():
+            #     image_files_list = image_folder.glob("*.jpeg")
+            #     image_entities = await self.__embed_images(image_files_list, document_metadata, image_chunk_dict)
+
+            # await self._async_client.insert(
+            #     collection_name=self.collection_name,
+            #     data=image_entities,
+            # )
+
             # insert file_id and partition into partition_file_manager
             self.partition_file_manager.add_file_to_partition(
                 file_id=file_id, partition=partition, file_metadata=file_metadata

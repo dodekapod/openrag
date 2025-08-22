@@ -242,7 +242,11 @@ class RecursiveSplitter(BaseChunker):
                 filtered_chunks.append(
                     Document(
                         page_content=chunk_w_context,
-                        metadata={**metadata, "page": start_page},
+                        metadata={
+                            **metadata, 
+                            "start_page": start_page, 
+                            "end_page": end_page
+                        },
                     )
                 )
         log.info("Document chunking completed")
@@ -350,7 +354,11 @@ class SemanticSplitter(BaseChunker):
                 filtered_chunks.append(
                     Document(
                         page_content=chunk_w_context,
-                        metadata={**metadata, "page": start_page},
+                        metadata={
+                            **metadata, 
+                            "start_page": start_page, 
+                            "end_page": end_page
+                        },
                     )
                 )
         log.info("Document chunking completed")
@@ -456,7 +464,11 @@ class MarkDownSplitter(BaseChunker):
                 filtered_chunks.append(
                     Document(
                         page_content=chunk_w_context,
-                        metadata={**metadata, "page": start_page},
+                        metadata={
+                            **metadata, 
+                            "start_page": start_page, 
+                            "end_page": end_page
+                        },
                     )
                 )
         log.info("Document chunking completed")

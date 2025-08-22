@@ -221,6 +221,19 @@ class MarkerLoader(BaseLoader):
             if not markdown:
                 raise RuntimeError(f"Conversion failed for {file_path_str}")
 
+            # Refacturing new embedder Jina-v4
+            # Saving images to a temporary dir
+            tmp_dir = Path(self.config['paths']['data_dir']) / 'pdf' / file_path.name.split('.')[0]  # /data/pdf/file_name
+            tmp_dir.mkdir(parents=True, exist_ok=True)
+            for key, picture in images.items():
+                # key: filename, picture: bytes or PIL.Image
+                img_path = tmp_dir / key
+                if hasattr(picture, "save"):
+                    picture.save(img_path)
+                else:
+                    with open(img_path, "wb") as f:
+                        f.write(picture)
+
             if self.config["loader"]["image_captioning"]:
                 captions_dict = await self._get_captions(images)
                 for key, desc in captions_dict.items():

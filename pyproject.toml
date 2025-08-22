@@ -44,4 +44,5 @@ dependencies = [
     "openai-whisper>=20250625",
     "umap-learn>=0.5.9.post2",
     "hdbscan>=0.8.40",
+    "pypdf2>=3.0.1",
 ]
