@@ -2,30 +2,25 @@ import asyncio
 from pathlib import Path
 import random
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import numpy as np
 import ray
 from langchain_core.documents.base import Document
-from pymilvus import MilvusClient
-
-from openai import AsyncOpenAI, OpenAI, OpenAIError
-
+from openai import AsyncOpenAI, OpenAI
 from pymilvus import (
     AnnSearchRequest,
+    AsyncMilvusClient,
     DataType,
+    Function,
     FunctionType,
     MilvusClient,
-    AsyncMilvusClient,
     MilvusException,
     RRFRanker,
-    Function,
 )
+from utils.logger import get_logger
 
 from .utils import PartitionFileManager
-
-
-from utils.logger import get_logger
 
 logger = get_logger()
 
@@ -180,7 +175,9 @@ class MilvusDB(BaseVectorDB):
             self._client.load_collection(name)
 
         except MilvusException as e:
-            self.logger.exception(f"Failed to load collection `{name}`", error=str(e))
+            self.logger.exception(
+                "Failed to load collection", collection=name, error=str(e)
+            )
             raise e
 
         self.partition_file_manager = PartitionFileManager(
@@ -481,16 +478,10 @@ class MilvusDB(BaseVectorDB):
         partition: list[str] = None,
         filter: Optional[dict] = None,
     ) -> list[Document]:
-        expr_parts = []
-        if partition != ["all"]:
-            expr_parts.append(f"partition in {partition}")
-
-        if filter:
-            for key, value in filter.items():
-                expr_parts.append(f"{key} == '{value}'")
-
-        # Join all parts with " and " only if there are multiple conditions
-        expr = " and ".join(expr_parts) if expr_parts else ""
+        expr, expr_params = self._build_expr_template_and_params(
+            partition=partition or ["all"],
+            filter=filter or {},
+        )
 
         query_vector = await self.__embed_query(query)
         vector_param = {
@@ -525,12 +516,14 @@ class MilvusDB(BaseVectorDB):
                 ranker=RRFRanker(100),
                 output_fields=["*"],
                 limit=top_k,
+                expr_params=expr_params,
             )
         else:
             response = await self._async_client.search(
                 collection_name=self.collection_name,
                 output_fields=["*"],
                 limit=top_k,
+                expr_params=expr_params,
                 **vector_param,
             )
 
@@ -557,7 +550,8 @@ class MilvusDB(BaseVectorDB):
                 return []
 
             # Adjust filter expression based on the type of value
-            filter_expression = f"partition == '{partition}' and file_id == '{file_id}'"
+            filter_expression = "partition == {partition} and file_id == {file_id}"
+            filter_params = {"partition": partition, "file_id": file_id}
 
             # Pagination parameters
             offset = 0
@@ -567,6 +561,7 @@ class MilvusDB(BaseVectorDB):
                 response = self._client.query(
                     collection_name=self.collection_name,
                     filter=filter_expression,
+                    filter_params=filter_params,
                     output_fields=["_id"],  # Only fetch IDs
                     limit=limit,
                     offset=offset,
@@ -584,7 +579,9 @@ class MilvusDB(BaseVectorDB):
             return results
 
         except Exception:
-            log.exception(f"Couldn't fetch file points for file_id {file_id}")
+            log.exception(
+                "Couldn't fetch file points", file_id=file_id, partition=partition
+            )
             raise
 
     def get_file_chunks(
@@ -598,7 +595,8 @@ class MilvusDB(BaseVectorDB):
                 return []
 
             # Adjust filter expression based on the type of value
-            filter_expression = f"partition == '{partition}' and file_id == '{file_id}'"
+            filter_expression = "partition == {partition} and file_id == {file_id}"
+            filter_params = {"partition": partition, "file_id": file_id}
 
             # Pagination parameters
             offset = 0
@@ -611,6 +609,7 @@ class MilvusDB(BaseVectorDB):
                 response = self._client.query(
                     collection_name=self.collection_name,
                     filter=filter_expression,
+                    filter_params=filter_params,
                     limit=limit,
                     offset=offset,
                 )
@@ -636,7 +635,9 @@ class MilvusDB(BaseVectorDB):
             return docs
 
         except Exception:
-            log.exception(f"Couldn't get file chunks for file_id {file_id}")
+            log.exception(
+                "Couldn't get file chunks", file_id=file_id, partition=partition
+            )
             raise
 
     def get_chunk_by_id(self, chunk_id: str):
@@ -717,8 +718,8 @@ class MilvusDB(BaseVectorDB):
     def list_partitions(self):
         try:
             return self.partition_file_manager.list_partitions()
-        except Exception as e:
-            self.logger.exception(f"Failed to list partitions: {e}")
+        except Exception:
+            self.logger.exception("Failed to list partitions")
             raise
 
     def collection_exists(self, collection_name: str):
@@ -736,7 +737,8 @@ class MilvusDB(BaseVectorDB):
         try:
             count = self._client.delete(
                 collection_name=self.collection_name,
-                filter=f"partition == '{partition}'",
+                filter="partition == {partition}",
+                filter_params={"partition": partition},
             )
 
             self.partition_file_manager.delete_partition(partition)
@@ -767,7 +769,8 @@ class MilvusDB(BaseVectorDB):
                 return []
 
             # Create a filter expression for the query
-            filter_expression = f"partition == '{partition}'"
+            filter_expression = "partition == {partition}"
+            expr_params = {"partition": partition}
 
             excluded_keys = ["text"]
             if not include_embedding:
@@ -786,6 +789,7 @@ class MilvusDB(BaseVectorDB):
             iterator = self._client.query_iterator(
                 collection_name=self.collection_name,
                 filter=filter_expression,
+                expr_params=expr_params,
                 batch_size=16000,
                 output_fields=["*"],
             )
