@@ -131,9 +131,10 @@ async def __format_sources(metadata_sources, only_txt=False):
     for i, s in enumerate(metadata_sources):
         filename = Path(s["filename"])
         file_url = s["file_url"]
-        page = s["start_page"]
+        start_page = s["start_page"]
+        end_page = s["end_page"]
         source_name = f"{filename}" + (
-            f" (page: {page})"
+            f" (pages: {start_page} - {end_page})"
             if filename.suffix in [".pdf", ".pptx", ".docx", ".doc"]
             else ""
         )
@@ -144,22 +145,22 @@ async def __format_sources(metadata_sources, only_txt=False):
         else:
             match filename.suffix.lower():
                 case ".pdf":
-                    reader = PdfReader(file_url)
-                    writer = PdfWriter()
+                    # reader = PdfReader(file_url)
+                    # writer = PdfWriter()
 
                     start_page = int(s["start_page"])
                     end_page = int(s["end_page"])
 
-                    for num_page in range(start_page - 1, end_page):
-                        writer.add_page(reader.pages[num_page])
-                    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_file:
-                        temp_path = tmp_file.name
-                        writer.write(tmp_file)
+                    # for num_page in range(start_page - 1, end_page):
+                    #     writer.add_page(reader.pages[num_page])
+                    # with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_file:
+                    #     temp_path = tmp_file.name
+                    #     writer.write(tmp_file)
 
                     elem = cl.Pdf(
-                        name=f"{filename} (pages: {start_page}-{end_page})",
-                        url=temp_path,
-                        page=1,
+                        name=source_name,
+                        url=file_url,
+                        page=start_page,
                         display="side",
                     )
                 case suffix if suffix in [".png", ".jpg", ".jpeg"]:
