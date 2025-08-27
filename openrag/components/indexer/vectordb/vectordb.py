@@ -2,6 +2,7 @@ import asyncio
 from pathlib import Path
 import random
 from abc import ABC, abstractmethod
+import re
 from typing import List, Optional
 
 import numpy as np
@@ -384,6 +385,7 @@ class MilvusDB(BaseVectorDB):
                 data=entities,
             )
 
+            # self.logger.info("Stop here")
             # # Pass the content of the chunk that has the images in the text section
             # image_chunk_dict = {}
             # for chunk in chunks:
@@ -397,8 +399,11 @@ class MilvusDB(BaseVectorDB):
             # # entities updates for image embeddings
             # file_name, file_ext = file_metadata.get("filename").split(".")
             # image_folder = Path(self.config['paths']['data_dir']) / file_ext/ file_name
+            # self.logger.info(f"Image folder path: {image_folder}")
             # if image_folder.exists():
             #     image_files_list = image_folder.glob("*.jpeg")
+            #     self.logger.info(f"Image file list: {image_files_list}")
+            #     self.logger.info(type(image_files_list))
             #     image_entities = await self.__embed_images(image_files_list, document_metadata, image_chunk_dict)
 
             # await self._async_client.insert(

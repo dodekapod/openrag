@@ -45,6 +45,7 @@ dependencies = [
     "umap-learn>=0.5.9.post2",
     "hdbscan>=0.8.40",
     "pytest-env>=1.1.5",
+    "vllm>=0.10.0",
 ]
 
 [dependency-groups]

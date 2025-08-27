@@ -8,7 +8,6 @@ import httpx
 import tempfile
 from chainlit.context import get_context
 from openai import AsyncOpenAI
-from PyPDF2 import PdfReader, PdfWriter
 from utils.logger import get_logger
 from dotenv import load_dotenv
 

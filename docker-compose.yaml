@@ -26,6 +26,11 @@ x-openrag: &openrag_template
   env_file:
     - ${SHARED_ENV:-.env}
   shm_size: 10.24gb
+  depends_on:
+    milvus:
+      condition: service_started
+    vllm-gpu:
+      condition: service_healthy
 
 x-vllm: &vllm_template
   networks:
@@ -39,11 +44,15 @@ x-vllm: &vllm_template
   volumes:
     - ${VLLM_CACHE:-/root/.cache/huggingface}:/root/.cache/huggingface # put ./vllm_cache if you want to have the weights on the vllm_cache folder in your project
   command: >
-    --model ${EMBEDDER_MODEL_NAME:-jinaai/jina-embeddings-v3}
-    --trust-remote-code
-    --gpu_memory_utilization 0.3
+    --model ${EMBEDDER_MODEL_NAME:-jinaai/jina-embeddings-v3} --trust-remote-code --max_model_len 8192 --gpu_memory_utilization 0.6 --task embed
   ports:
     - ${VLLM_PORT:-8000}:8000
+  healthcheck:
+    test: [ "CMD", "curl", "-f", "http://localhost:8000/v1/models" ]
+    interval: 10s
+    timeout: 5s
+    retries: 20
+
 services:
   # GPU - default 
   openrag:
@@ -58,8 +67,10 @@ services:
     profiles:
       - ''
     depends_on:
-    - milvus
-    - vllm-gpu
+      milvus:
+        condition: service_started
+      vllm-gpu:
+        condition: service_healthy
 
   # No GPU
   openrag-cpu:
@@ -68,8 +79,8 @@ services:
     profiles:
       - 'cpu'
     depends_on:
-    - milvus
-    - vllm-cpu
+      - milvus
+      - vllm-cpu
 
   rdb:
     image: postgres:15
@@ -88,8 +99,8 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: all 
-              capabilities: [gpu]
+              count: all
+              capabilities: [ gpu ]
     profiles:
       - '' # Empty string gives default behavior (but does not run when cpu requested)
 
@@ -103,4 +114,3 @@ services:
     deploy: {}
     profiles:
       - 'cpu'
-
