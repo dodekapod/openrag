@@ -1,4 +1,5 @@
 import asyncio
+import base64
 from pathlib import Path
 import random
 from abc import ABC, abstractmethod
@@ -19,6 +20,7 @@ from pymilvus import (
     MilvusException,
     RRFRanker,
 )
+import requests
 from utils.logger import get_logger
 
 from .utils import PartitionFileManager
@@ -242,6 +244,12 @@ class MilvusDB(BaseVectorDB):
         )
 
         schema.add_field(
+            field_name="data_type",
+            datatype=DataType.VARCHAR,
+            max_length=8,
+        )
+
+        schema.add_field(
             field_name="vector",
             datatype=DataType.FLOAT_VECTOR,
             dim=self.embedding_dimension,
@@ -314,15 +322,17 @@ class MilvusDB(BaseVectorDB):
         try:
             output = []
             texts = [chunk.page_content for chunk in chunks]
-            embeddings = await self.embedder.embeddings.create(
-                model=self.embedding_model,
-                input=texts,
-            )
+
             for i, chunk in enumerate(chunks):
+                embedding = await self.embedder.embeddings.create(
+                    model=self.embedding_model,
+                    input=[texts[i]],
+                )
                 output.append(
                     {
                         "text": chunk.page_content,
-                        "vector": embeddings.data[i].embedding,
+                        "data_type": "text",
+                        "vector": embedding.data[0].embedding,
                         **chunk.metadata,
                     }
                 )
@@ -333,17 +343,33 @@ class MilvusDB(BaseVectorDB):
 
     async def __embed_images(self, images: list[Path], document_metatdata: dict, chunk_content_dict: dict) -> list[dict]:
         try:
-            image_embeddings = self.embedding_model.encode(
-                sentences=images,
-                tasks="retrieval",
-            )
-
             output = []
             for i, image in enumerate(images):
+                image_bytes = open(str(image), "rb").read()
+                image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+                data_url = f"data:image/jpeg;base64,{image_b64}"
+
+                response = requests.post(
+                    f"{self.config.embedder.get("base_url")}/embeddings",
+                    json={
+                        "model": self.embedding_model,
+                        "messages": [{
+                            "role": "user",
+                            "content": [
+                                {"type": "image_url", "image_url": {"url": data_url}},
+                            ],
+                        }],
+                        "encoding_format": "float",
+                    },
+                )
+                response.raise_for_status()
+                response_json = response.json()
+
                 output.append(
                     {
                         "text": chunk_content_dict[str(image.name)],
-                        "vector": image_embeddings[i],
+                        "data_type": "image",
+                        "vector": response_json["data"][0]["embedding"],
                         **document_metatdata,
                     }
                 )
@@ -385,31 +411,27 @@ class MilvusDB(BaseVectorDB):
                 data=entities,
             )
 
-            # self.logger.info("Stop here")
-            # # Pass the content of the chunk that has the images in the text section
-            # image_chunk_dict = {}
-            # for chunk in chunks:
-            #     chunk_content = chunk.page_content
-            #     jpeg_images = re.findall(r'!\[\]\(([^)]+\.jpeg)\)', chunk_content, flags=re.IGNORECASE)
-            #     for image_file_name in jpeg_images:
-            #         image_chunk_dict[image_file_name] = chunk_content
+            # Pass the content of the chunk that has the images in the text section
+            image_chunk_dict = {}
+            for chunk in chunks:
+                chunk_content = chunk.page_content
+                jpeg_images = re.findall(r'!\[\]\(([^)]+\.jpeg)\)', chunk_content, flags=re.IGNORECASE)
+                for image_file_name in jpeg_images:
+                    image_chunk_dict[image_file_name] = chunk_content
 
-            # document_metadata = chunks[0].metadata
+            document_metadata = chunks[0].metadata
 
-            # # entities updates for image embeddings
-            # file_name, file_ext = file_metadata.get("filename").split(".")
-            # image_folder = Path(self.config['paths']['data_dir']) / file_ext/ file_name
-            # self.logger.info(f"Image folder path: {image_folder}")
-            # if image_folder.exists():
-            #     image_files_list = image_folder.glob("*.jpeg")
-            #     self.logger.info(f"Image file list: {image_files_list}")
-            #     self.logger.info(type(image_files_list))
-            #     image_entities = await self.__embed_images(image_files_list, document_metadata, image_chunk_dict)
+            # entities updates for image embeddings
+            file_name, file_ext = file_metadata.get("filename").split(".")
+            image_folder = Path(self.config['paths']['data_dir']) / file_ext/ file_name
+            if image_folder.exists():
+                image_files_list = list(image_folder.glob("*.jpeg"))
+                image_entities = await self.__embed_images(image_files_list, document_metadata, image_chunk_dict)
 
-            # await self._async_client.insert(
-            #     collection_name=self.collection_name,
-            #     data=image_entities,
-            # )
+            await self._async_client.insert(
+                collection_name=self.collection_name,
+                data=image_entities,
+            )
 
             # insert file_id and partition into partition_file_manager
             self.partition_file_manager.add_file_to_partition(
