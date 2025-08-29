@@ -167,8 +167,13 @@ class RagPipeline:
         #     context = format_context(docs)
 
         # 3. Format the retrieved docs
-        context = format_context(docs)
-
+        logger.info("Before")
+        context, list_images = format_context(docs)
+        message_image = {
+            "role": "user",
+            "content": list_images
+        }
+        logger.info("After")
         # 4. prepare the output
         messages: list = copy.deepcopy(messages)
 
@@ -182,6 +187,7 @@ class RagPipeline:
         )
         # messages.append({"role": "tool", "name": "retriever", "content": f"Here are the retrieved documents: {context}"})
 
+        messages.append(message_image)
         payload["messages"] = messages
         return payload, docs
 

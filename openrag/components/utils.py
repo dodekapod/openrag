@@ -1,5 +1,6 @@
 import asyncio
 import atexit
+import base64
 import threading
 from abc import ABCMeta
 from pathlib import Path
@@ -10,7 +11,7 @@ from langchain_core.documents.base import Document
 
 # Global variables
 config = load_config()
-
+data_dir = Path(config.paths.data_dir)
 
 class SingletonMeta(type):
     _instances = {}
@@ -127,20 +128,33 @@ def load_sys_template(file_path: Path) -> tuple[str, str]:
 
 def format_context(docs: list[Document]) -> str:
     if not docs:
-        return "No document found from the database"
+        return "No document found from the database", []
 
     context = "Extracted documents:\n"
+    list_images = []
     for i, doc in enumerate(docs, start=1):
         # doc_id = f"[doc_{i}]"
         # document = f"""
         # *source*: {doc_id}
         # content: \n{doc.page_content.strip()}\n
         # """
-        document = f"""content: \n{doc.page_content.strip()}\n"""
-        context += document
-        context += "-" * 40 + "\n\n"
+        data_type = doc.metadata.get("data_type")
+        if data_type == "text":
+            document = f"""content: \n{doc.page_content.strip()}\n"""
+            context += document
+            context += "-" * 40 + "\n\n"
+        elif data_type =="image":
+            image_path = Path(data_dir) / doc.metadata.get("filename")
+            image_bytes = open(str(image_path), "rb").read()
+            image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+            image_url = f"data:image/jpeg;base64,{image_b64}"
 
-    return context
+            list_images.append(                        
+                {
+                    "type": "image_url",
+                    "image_url": {"url": image_url},
+                })
+    return context, list_images
 
 
 def get_llm_semaphore() -> DistributedSemaphore:

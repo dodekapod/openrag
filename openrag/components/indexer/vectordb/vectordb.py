@@ -10,6 +10,7 @@ from typing import List, Optional
 import numpy as np
 import ray
 from langchain_core.documents.base import Document
+
 from pymilvus import (
     AnnSearchRequest,
     AsyncMilvusClient,
@@ -344,68 +345,6 @@ class MilvusDB(BaseVectorDB):
     async def list_collections(self) -> list[str]:
         return self._client.list_collections()
 
-    async def __embed_documents(self, chunks: list[Document]) -> list[dict]:
-        """
-        Asynchronously embed documents using the configured embedder.
-        """
-        try:
-            output = []
-            texts = [chunk.page_content for chunk in chunks]
-
-            for i, chunk in enumerate(chunks):
-                embedding = await self.embedder.embeddings.create(
-                    model=self.embedding_model,
-                    input=[texts[i]],
-                )
-                output.append(
-                    {
-                        "text": chunk.page_content,
-                        "data_type": "text",
-                        "vector": embedding.data[0].embedding,
-                        **chunk.metadata,
-                    }
-                )
-            return output
-        except Exception as e:
-            self.logger.exception("Error embedding documents", error=str(e))
-            raise e
-
-    async def __embed_images(self, images: list[Path], document_metatdata: dict, chunk_content_dict: dict) -> list[dict]:
-        try:
-            output = []
-            for i, image in enumerate(images):
-                image_bytes = open(str(image), "rb").read()
-                image_b64 = base64.b64encode(image_bytes).decode("utf-8")
-                data_url = f"data:image/jpeg;base64,{image_b64}"
-
-                response = requests.post(
-                    f"{self.config.embedder.get("base_url")}/embeddings",
-                    json={
-                        "model": self.embedding_model,
-                        "messages": [{
-                            "role": "user",
-                            "content": [
-                                {"type": "image_url", "image_url": {"url": data_url}},
-                            ],
-                        }],
-                        "encoding_format": "float",
-                    },
-                )
-                response.raise_for_status()
-                response_json = response.json()
-
-                output.append(
-                    {
-                        "text": chunk_content_dict[str(image.name)],
-                        "data_type": "image",
-                        "vector": response_json["data"][0]["embedding"],
-                        **document_metatdata,
-                    }
-                )
-            return output
-        except Exception as e:
-            self.logger.exception("Error embedding images", error=str(e))
-            raise e
         
     async def async_add_documents(self, chunks: list[Document]) -> None:
         """Asynchronously add documents to the vector store."""
@@ -459,7 +398,7 @@ class MilvusDB(BaseVectorDB):
             image_folder = Path(self.config['paths']['data_dir']) / file_ext/ file_name
             if image_folder.exists():
                 image_files_list = list(image_folder.glob("*.jpeg"))
-                image_entities = await self.__embed_images(image_files_list, document_metadata, image_chunk_dict)
+                image_entities = await self.embedder.embed_images(image_files_list, document_metadata, image_chunk_dict)
 
             await self._async_client.insert(
                 collection_name=self.collection_name,
