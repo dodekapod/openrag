@@ -5,7 +5,6 @@ from urllib.parse import urlparse
 
 import chainlit as cl
 import httpx
-import tempfile
 from chainlit.context import get_context
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
@@ -146,17 +145,8 @@ async def __format_sources(metadata_sources, only_txt=False):
         else:
             match filename.suffix.lower():
                 case ".pdf":
-                    # reader = PdfReader(file_url)
-                    # writer = PdfWriter()
-
                     start_page = int(s["start_page"])
                     end_page = int(s["end_page"])
-
-                    # for num_page in range(start_page - 1, end_page):
-                    #     writer.add_page(reader.pages[num_page])
-                    # with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_file:
-                    #     temp_path = tmp_file.name
-                    #     writer.write(tmp_file)
 
                     elem = cl.Pdf(
                         name=source_name,

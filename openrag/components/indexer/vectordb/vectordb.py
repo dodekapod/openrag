@@ -1,10 +1,7 @@
 import asyncio
-import base64
 from pathlib import Path
-import random
 from abc import ABC, abstractmethod
 import re
-import requests
 from typing import List, Optional
 
 import numpy as np

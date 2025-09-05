@@ -44,7 +44,11 @@ x-vllm: &vllm_template
   volumes:
     - ${VLLM_CACHE:-/root/.cache/huggingface}:/root/.cache/huggingface # put ./vllm_cache if you want to have the weights on the vllm_cache folder in your project
   command: >
-    --model ${EMBEDDER_MODEL_NAME:-jinaai/jina-embeddings-v3} --trust-remote-code --max_model_len 8192 --gpu_memory_utilization 0.6 --task embed
+    --model ${EMBEDDER_MODEL_NAME:-jinaai/jina-embeddings-v3} 
+    --trust-remote-code 
+    --max_model_len 8192 
+    --gpu_memory_utilization 0.6 
+    --task embed
   ports:
     - ${VLLM_PORT:-8000}:8000
   healthcheck:
