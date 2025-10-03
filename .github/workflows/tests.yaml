@@ -22,7 +22,7 @@ jobs:
 
       -
         name: Set up mini env
-        run: cp .github/workflows/mini/.env ./ && .github/workflows/mini/*.yaml ./
+        run: cp .github/workflows/mini/.env ./ && cp .github/workflows/mini/*.yaml ./
 
       -
         name: Build
