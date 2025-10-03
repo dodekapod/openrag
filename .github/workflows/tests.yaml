@@ -21,6 +21,18 @@ jobs:
           submodules: true
 
       -
+        name: Set up mini env
+        run: cp .github/workflows/mini/.env ./ && .github/workflows/mini/*.yaml ./
+
+      -
+        name: Build
+        run: docker compose --profile cpu build
+
+      -
+        name: Run
+        run: docker compose --profile cpu up -d
+
+      -
         name: Prnt
-        run: ls -lah
+        run: ls -lah && sleep 20s && docker container ls
 
