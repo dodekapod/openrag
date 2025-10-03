@@ -5,7 +5,7 @@ include:
   - ${INDEXERUI_COMPOSE_FILE:-extern/indexer-ui/docker-compose.yaml}
 
 x-openrag: &openrag_template
-  image: ghcr.io/linagora/openrag:dev-latest
+  #image: ghcr.io/linagora/openrag:dev-latest
   build:
     context: .
     dockerfile: Dockerfile
