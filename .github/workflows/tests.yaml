@@ -30,7 +30,7 @@ jobs:
 
       -
         name: Run
-        run: docker compose --profile cpu up -d
+        run: docker compose --profile cpu up
 
       -
         name: Prnt
