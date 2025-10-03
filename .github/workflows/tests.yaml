@@ -30,7 +30,7 @@ jobs:
 
       -
         name: Run
-        run: docker compose --profile cpu up
+        run: docker compose --profile cpu up -d && .github/workflows/mini/wait_for_healthy.sh openrag-openrag-cpu-1
 
       -
         name: Prnt
