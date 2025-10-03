@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  set-up-docker-compose:
+  build-openrag-from-scratch:
     runs-on: ubuntu-latest
     steps:
       -
@@ -14,4 +14,13 @@ jobs:
         with:
           version: v2.34.0
 
+      -
+        name: Checkout current branch
+        uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      -
+        name: Prnt
+        run: ls -lah
 
