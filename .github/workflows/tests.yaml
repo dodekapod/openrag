@@ -1,0 +1,16 @@
+name: tests
+
+on:
+  push:
+
+jobs:
+  set-up-docker-compose:
+    runs-on: debian-latest
+    steps:
+      -
+        name: Set up Docker Compose
+        uses: docker/setup-compose-action@v1
+        with:
+          version: v2.34.0
+
+
