@@ -34,7 +34,7 @@ jobs:
 
       -
         name: Index 500 documents
-        run: python3 -m venv venv && pip3 install -r utility/requirements.txt && source venv/bin/activate && python3 utility/data_indexer.py -d .github/workflows/data/simplewiki-500/ -p simplewiki-500 && .github/workflows/mini/wait_for_tasks_completed.sh openrag-openrag-cpu-1 8080 500
+        run: python3 -m venv venv && source venv/bin/activate && pip3 install -r utility/requirements.txt && python3 utility/data_indexer.py -d .github/workflows/data/simplewiki-500/ -p simplewiki-500 && .github/workflows/mini/wait_for_tasks_completed.sh openrag-openrag-cpu-1 8080 500
 
       -
         name: Prnt
