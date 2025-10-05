@@ -43,12 +43,12 @@ jobs:
         run: docker container ls
 
       -
-        name: Sleep 30s
-        run: sleep 30s
+        name: Sleep 60s
+        run: sleep 60s
 
       -
         name: Index 500 documents
-        run: python3 -m venv venv && source venv/bin/activate && pip3 install -r utility/requirements.txt && python3 utility/data_indexer.py -d .github/workflows/data/simplewiki-500/ -p simplewiki-500 && .github/workflows/mini/wait_for_tasks_completed.sh openrag-openrag-cpu-1 8080 500
+        run: python3 -m venv venv && source venv/bin/activate && pip3 install -r utility/requirements.txt && ADDR=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' openrag-openrag-cpu-1` && echo ${ADDR} && python3 utility/data_indexer.py -u http://${ADDR}:8080 -d .github/workflows/data/simplewiki-500/ -p simplewiki-500 && .github/workflows/mini/wait_for_tasks_completed.sh openrag-openrag-cpu-1 8080 500
 
       -
         name: Prnt
