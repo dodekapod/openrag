@@ -33,6 +33,10 @@ jobs:
         run: docker compose --profile cpu up -d && .github/workflows/mini/wait_for_healthy.sh openrag-vllm-cpu-1
 
       -
+        name: Index 500 documents
+        run: python3 -m venv venv && pip3 install -r utility/requirements.txt && source venv/bin/activate && python3 utility/data_indexer.py -d .github/workflows/data/simplewiki-500/ -p simplewiki-500 && .github/workflows/mini/wait_for_tasks_completed.sh openrag-openrag-cpu-1 8080 500
+
+      -
         name: Prnt
         run: ls -lah && sleep 20s && docker container ls
 
