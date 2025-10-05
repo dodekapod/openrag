@@ -43,6 +43,14 @@ jobs:
         run: docker container ls
 
       -
+        name: Detect openrag-cpu ip address
+        run: ADDR=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' openrag-openrag-cpu-1` && echo ${ADDR} && echo "addr end"
+
+      -
+        name: Print openrag-cpu ip address
+        run: echo "openrag-cpu IP is "${ADDR}"end"
+
+      -
         name: Sleep 60s
         run: sleep 60s
 
