@@ -8,6 +8,11 @@ jobs:
   build-openrag-from-scratch:
     runs-on: ubuntu-latest
     steps:
+      - name: Update apt and install packages
+        run: |
+          sudo apt update
+          sudo apt install -y curl git jq
+
       -
         name: Set up Docker Compose
         uses: docker/setup-compose-action@v1
