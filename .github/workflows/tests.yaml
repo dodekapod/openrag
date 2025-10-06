@@ -12,6 +12,8 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y curl git jq
+          sudo apt clean
+          sudo apt autoremove --purge -y
 
       -
         name: Set up Docker Compose
