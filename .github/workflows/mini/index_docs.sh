@@ -8,6 +8,9 @@ docker logs openrag-openrag-cpu-1
 
 echo "before"${OPENRAG_ADDR}"after"
 
+curl http://${OPENRAG_ADDR}:8080/health_check && echo Health is ok
+echo $?
+
 python3 utility/data_indexer.py \
     -u http://${OPENRAG_ADDR}:8080 \
     -d .github/workflows/data/simplewiki-500/ \
