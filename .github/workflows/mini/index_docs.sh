@@ -4,6 +4,8 @@ docker container ls
 OPENRAG_ADDR=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' openrag-openrag-cpu-1`
 docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' openrag-openrag-cpu-1
 
+docker logs openrag-openrag-cpu-1
+
 echo "before"${OPENRAG_ADDR}"after"
 
 python3 utility/data_indexer.py \
