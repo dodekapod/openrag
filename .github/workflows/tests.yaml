@@ -60,7 +60,7 @@ jobs:
 
       -
         name: Index 500 documents
-        run: source venv/bin/activate && python3 utility/data_indexer.py -u http://`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' openrag-openrag-cpu-1`:8080 -d .github/workflows/data/simplewiki-500/ -p simplewiki-500 && .github/workflows/mini/wait_for_tasks_completed.sh openrag-openrag-cpu-1 8080 500
+        run: .github/workflows/mini/index_docs.sh
 
       -
         name: Prnt
