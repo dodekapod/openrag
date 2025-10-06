@@ -52,7 +52,7 @@ x-vllm: &vllm_template
     interval: 30s
     timeout: 10s
     retries: 3
-    start_period: 180s
+    start_period: 360s
   # ports:
   #   - ${VLLM_PORT:-8000}:8000
 services:
