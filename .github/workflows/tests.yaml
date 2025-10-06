@@ -37,6 +37,9 @@ jobs:
         name: Run
         run: docker compose --profile cpu up -d && .github/workflows/mini/wait_for_healthy.sh openrag-vllm-cpu-1
 
+      -
+        name: Cleanup
+        run: docker container prune -f && docker image prune -f && docker builder prune -f
 
       -
         name: List containers
