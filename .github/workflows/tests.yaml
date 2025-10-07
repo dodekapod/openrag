@@ -10,6 +10,7 @@ jobs:
     steps:
       - name: Update apt and install packages
         run: |
+          df -h
           sudo apt update
           sudo apt install -y curl git jq
           sudo apt clean
@@ -41,7 +42,10 @@ jobs:
 
       -
         name: Cleanup
-        run: docker container prune -f && docker image prune -f && docker builder prune -f
+        run: |
+          df -h
+          docker container prune -f && docker image prune -f && docker builder prune -f
+          df -h
 
       -
         name: List containers
