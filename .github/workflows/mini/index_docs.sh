@@ -10,7 +10,7 @@ echo "before"${OPENRAG_ADDR}"after"
 
 #curl http://${OPENRAG_ADDR}:8080/health_check && echo Health is ok
 #echo $?
-docker logs --follow openrag-openrag-cpu-1
+#docker logs --follow openrag-openrag-cpu-1
 
 while ! curl -fs "${OPENRAG_ADDR}:${PORT}/health_check" ;
 do
