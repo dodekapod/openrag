@@ -25,14 +25,34 @@ jobs:
         with:
           version: v2.34.0
 
-      -
-        name: Use /mnt instead of default location
+      - name: Free up space and move Docker storage to /mnt
         run: |
-          sudo mkdir -p /mnt/work
-          sudo chown -R ${USER}:${USER} /mnt/work
-          mkdir -p /home/runner/work/
-          ln -s /mnt/work /home/runner/work
-          df -h
+          echo "Stopping Docker..."
+          sudo systemctl stop docker
+
+          echo "Creating new Docker root at /mnt/docker..."
+          sudo mkdir -p /mnt/docker
+          sudo rsync -aqxP /var/lib/docker/ /mnt/docker
+
+          echo "Updating Docker daemon config..."
+          echo '{"data-root": "/mnt/docker"}' | sudo tee /etc/docker/daemon.json
+
+		  cat /etc/docker/daemon.json
+
+          echo "Restarting Docker..."
+          sudo systemctl start docker
+
+          echo "Verifying Docker root directory:"
+          docker info | grep "Docker Root Dir"
+
+#      -
+#        name: Use /mnt instead of default location
+#        run: |
+#          sudo mkdir -p /mnt/work
+#          sudo chown -R ${USER}:${USER} /mnt/work
+#          mkdir -p /home/runner/work/
+#          ln -s /mnt/work /home/runner/work
+#          df -h
 
       -
         name: Checkout current branch
