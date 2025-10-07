@@ -26,6 +26,14 @@ jobs:
           version: v2.34.0
 
       -
+        name: Use /mnt instead of default location
+        run: |
+          mkdir -p /mnt/work
+          mkdir -p /home/runner/work/
+          ln -s /mnt/work /home/runner/work
+          df -h
+
+      -
         name: Checkout current branch
         uses: actions/checkout@v5
         with:
