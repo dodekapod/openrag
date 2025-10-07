@@ -10,10 +10,12 @@ echo "before"${OPENRAG_ADDR}"after"
 
 #curl http://${OPENRAG_ADDR}:8080/health_check && echo Health is ok
 #echo $?
-while ! curl -fs "${OPENRAG_ADDR}:${PORT}/health_check" >/dev/null 2>&1;
+while ! curl -fs "${OPENRAG_ADDR}:${PORT}/health_check" ;
 do
   echo "Waiting for OpenRag to start at ${OPENRAG_ADDR}:${PORT}"
   sleep 10s
+  OPENRAG_ADDR=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' openrag-openrag-cpu-1`
+  docker container ls
 done
 
 
