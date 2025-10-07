@@ -71,7 +71,9 @@ jobs:
 
       -
         name: Run
-        run: docker compose --profile cpu up -d && .github/workflows/mini/wait_for_healthy.sh openrag-vllm-cpu-1
+        run: |
+          docker compose --profile cpu up -d || docker logs openrag-vllm-cpu-1
+          .github/workflows/mini/wait_for_healthy.sh openrag-vllm-cpu-1
 
       -
         name: Cleanup
