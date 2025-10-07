@@ -8,8 +8,14 @@ docker logs openrag-openrag-cpu-1
 
 echo "before"${OPENRAG_ADDR}"after"
 
-curl http://${OPENRAG_ADDR}:8080/health_check && echo Health is ok
-echo $?
+#curl http://${OPENRAG_ADDR}:8080/health_check && echo Health is ok
+#echo $?
+while ! curl -fs "${OPENRAG_ADDR}:${PORT}/health_check" >/dev/null 2>&1;
+do
+  echo "Waiting for OpenRag to start at ${OPENRAG_ADDR}:${PORT}"
+  sleep 10s
+done
+
 
 python3 utility/data_indexer.py \
     -u http://${OPENRAG_ADDR}:8080 \
