@@ -28,7 +28,8 @@ jobs:
       -
         name: Use /mnt instead of default location
         run: |
-          mkdir -p /mnt/work
+          sudo mkdir -p /mnt/work
+          sudo chown -R ${USER}:${USER} /mnt/work
           mkdir -p /home/runner/work/
           ln -s /mnt/work /home/runner/work
           df -h
