@@ -10,6 +10,8 @@ do
 
   if [ "${tf}" -ne 0 ]
   then
+    df -h
+    docker logs openrag-openrag-cpu-1
     echo "ERROR: ${tf} tasks failed. Aborting."
     exit 1
   fi
