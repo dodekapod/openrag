@@ -52,8 +52,8 @@ jobs:
         run: ADDR=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' openrag-openrag-cpu-1` && echo ${ADDR} && echo "addr end"
 
       -
-        name: Sleep 30s
-        run: sleep 30s
+        name: Sleep 120s
+        run: sleep 120s
 
       -
         name: Install Python venv
