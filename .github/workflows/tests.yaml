@@ -11,6 +11,8 @@ jobs:
       - name: Update apt and install packages
         run: |
           df -h
+          echo ${PWD}
+          ls -lah /mnt/
           sudo apt update
           sudo apt install -y curl git jq
           sudo apt clean
