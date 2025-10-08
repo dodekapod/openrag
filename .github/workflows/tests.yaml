@@ -12,8 +12,6 @@ jobs:
         run: |
           df -h
           echo ${PWD}
-          ls -lah /mnt/
-          cat /mnt/DATALOSS_WARNING_README.txt
           sudo apt update
           sudo apt install -y curl git jq
           sudo apt clean
@@ -46,15 +44,6 @@ jobs:
           echo "Verifying Docker root directory:"
           docker info | grep "Docker Root Dir"
 
-#      -
-#        name: Use /mnt instead of default location
-#        run: |
-#          sudo mkdir -p /mnt/work
-#          sudo chown -R ${USER}:${USER} /mnt/work
-#          mkdir -p /home/runner/work/
-#          ln -s /mnt/work /home/runner/work
-#          df -h
-
       -
         name: Checkout current branch
         uses: actions/checkout@v5
@@ -63,7 +52,9 @@ jobs:
 
       -
         name: Set up mini env
-        run: cp .github/workflows/mini/.env ./ && cp .github/workflows/mini/*.yaml ./
+        run: |
+          cp .github/workflows/mini/.env ./
+          cp .github/workflows/mini/*.yaml ./
 
       -
         name: Build
@@ -78,8 +69,9 @@ jobs:
       -
         name: Cleanup
         run: |
-          df -h
-          docker container prune -f && docker image prune -f && docker builder prune -f
+          docker container prune -f
+          docker image prune -f
+          docker builder prune -f
           df -h
 
       -
@@ -87,20 +79,22 @@ jobs:
         run: docker container ls
 
       -
-        name: Detect openrag-cpu ip address
-        run: ADDR=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' openrag-openrag-cpu-1` && echo ${ADDR} && echo "addr end"
-
-      -
-        name: Sleep 10s
-        run: sleep 10s
-
-      -
         name: Install Python venv
-        run: python3 -m venv venv && source venv/bin/activate && pip3 install -r utility/requirements.txt
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip3 install -r utility/requirements.txt
 
       -
         name: Index 500 documents
         run: .github/workflows/mini/index_docs.sh
+
+      -
+        name: Create backup
+        run: |
+          mkdir ${PWD}/backup
+          docker compose run --rm -v ${PWD}/backup:/backup:rw --entrypoint "bash /app/openrag/scripts/entrypoint-backup.sh simplewiki-500" openrag-cpu
+          wc -l backup/simplewiki-500.openrag
 
       -
         name: Prnt
