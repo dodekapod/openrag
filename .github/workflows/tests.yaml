@@ -103,7 +103,7 @@ jobs:
       -
         name: Restore from modified backup
         run: |
-          docker compose run --rm -v ${PWD}/backup:/backup:ro --entrypoint "bash /app/openrag/scripts/entrypoint-restore.sh /backup/tmp.openrag simplewiki-500-2" openrag-cpu
+          docker compose run --rm -v ${PWD}/backup:/backup:ro --entrypoint "bash /app/openrag/scripts/entrypoint-restore.sh simplewiki-500-2 /backup/tmp.openrag" openrag-cpu
 
       -
         name: Create backup again
