@@ -97,6 +97,23 @@ jobs:
           wc -l backup/simplewiki-500.openrag
 
       -
+        name: Change parition name
+        run: sed 's/"simplewiki-500"/"simplewiki-500-2"/g' backup/simplewiki-500.openrag > backup/tmp.openrag
+
+      -
+        name: Restore from modified backup
+        run: |
+          docker compose run --rm -v ${PWD}/backup:/backup:ro --entrypoint "bash /app/openrag/scripts/entrypoint-restore.sh /backup/tmp.openrag simplewiki-500-2" openrag-cpu
+
+      -
+        name: Create backup again
+        run: |
+          mkdir ${PWD}/backup
+          docker compose run --rm -v ${PWD}/backup:/backup:rw --entrypoint "bash /app/openrag/scripts/entrypoint-backup.sh simplewiki-500-2" openrag-cpu
+          wc -l backup/simplewiki-500-2.openrag
+          diff backup/simplewiki-500.openrag backup/simplewiki-500-2.openrag
+
+      -
         name: Prnt
         run: ls -lah && sleep 20s && docker container ls
 
