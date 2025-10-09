@@ -110,6 +110,11 @@ jobs:
         run: |
           docker compose run --rm -v ${PWD}/backup:/backup:rw --entrypoint "bash /app/openrag/scripts/entrypoint-backup.sh simplewiki-500-2" openrag-cpu
           wc -l backup/simplewiki-500-2.openrag
+
+      -
+        name: Compare backups
+        run: |
+          sed -i 's/"simplewiki-500-2"/"simplewiki-500"/g' backup/simplewiki-500-2.openrag
           diff backup/simplewiki-500.openrag backup/simplewiki-500-2.openrag
 
       -
