@@ -115,7 +115,7 @@ jobs:
         name: Compare backups
         run: |
           sed -i 's/"simplewiki-500-2"/"simplewiki-500"/g' backup/simplewiki-500-2.openrag
-          diff backup/simplewiki-500.openrag backup/simplewiki-500-2.openrag
+          diff <(grep -Ev '^{"created": ' backup/simplewiki-500.openrag) <(grep -Ev '^{"created": ' backup/simplewiki-500-2.openrag)
 
       -
         name: Prnt
